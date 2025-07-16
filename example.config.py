@@ -1,12 +1,25 @@
-"""Enhanced configuration with dynamic stream ID support"""
+"""Enhanced configuration with multi-platform support"""
+
+# Platform Configuration
+ENABLED_PLATFORMS = ["barkle", "youtube", "twitch"]  # Enable/disable platforms
 
 # Barkle API Configuration
 BARKLE_TOKEN = "your_barkle_token_here"
-BARKLE_TARGET_USER_ID = "barkle:username_to_monitor"  
+BARKLE_TARGET_USER_ID = "username_to_monitor"  
 
 # Stream Configuration Options
-BARKLE_STREAM_ID = None 
+BARKLE_STREAM_ID = "target_stream_id_here" 
 BARKLE_AUTO_DETECT_STREAM = True
+
+# YouTube Configuration
+YOUTUBE_VIDEO_ID = None  # Will auto-detect if None, or provide specific video ID
+YOUTUBE_CHANNEL_ID = None  # Optional: monitor specific channel
+
+# Twitch Configuration
+TWITCH_BOT_TOKEN = "your_twitch_bot_token_here"
+TWITCH_CLIENT_ID = "your_twitch_client_id_here"
+TWITCH_CHANNEL = "your_twitch_channel_here"
+TWITCH_BOT_NICK = "your_bot_nickname"
 
 # Groq API Configuration  
 GROQ_API_KEY = "your_groq_api_key_here"
