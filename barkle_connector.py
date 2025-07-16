@@ -267,7 +267,7 @@ class EnhancedBarkleConnector:
                     content = selected_message.split(':', 1)[1].strip()
                     summary = f"{content}"
                 else:
-                    summary = f"selected_message}"
+                    summary = f"{selected_message}"
             
             elif len(self.chat_buffer) == 2:
                 msg1, msg2 = self.chat_buffer[0], self.chat_buffer[1]
