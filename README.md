@@ -1,6 +1,7 @@
 # Chatty Dee
 
 ## Overview
+## MULTIPLATFORM COMING SOON!
 
 Chatty Dee monitors live chat messages from streams and creates an animated character that:
 - **Listens** to live chat messages via WebSocket
