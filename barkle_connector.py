@@ -274,52 +274,20 @@ class EnhancedBarkleConnector:
             self.process_with_random_selection()
     
     def process_with_random_selection(self):
-        """Process with actual message content and cooldown tracking"""
+        """Process with actual message content - SINGLE MESSAGE ONLY"""
         try:
             if not self.chat_buffer:
                 return
             
-            # Pick messages to speak with actual content
-            if len(self.chat_buffer) == 1:
-                selected_message = self.chat_buffer[0]
-                if ":" in selected_message:
-                    user_name = selected_message.split(':', 1)[0].strip()
-                    content = selected_message.split(':', 1)[1].strip()
-                    summary = f"{content}"
-                else:
-                    summary = f"{selected_message}"
+            # Always pick just ONE message, regardless of buffer size
+            selected_message = random.choice(self.chat_buffer)
             
-            elif len(self.chat_buffer) == 2:
-                msg1, msg2 = self.chat_buffer[0], self.chat_buffer[1]
-                
-                user1 = msg1.split(':', 1)[0].strip() if ":" in msg1 else "Viewer"
-                content1 = msg1.split(':', 1)[1].strip() if ":" in msg1 else msg1
-                
-                user2 = msg2.split(':', 1)[0].strip() if ":" in msg2 else "Viewer"
-                content2 = msg2.split(':', 1)[1].strip() if ":" in msg2 else msg2
-                
-                summary = f"{user1} says {content1}, and {user2} says {content2}"
-            
+            if ":" in selected_message:
+                user_name = selected_message.split(':', 1)[0].strip()
+                content = selected_message.split(':', 1)[1].strip()
+                summary = f"{content}"  # Just the content
             else:
-                # Multiple messages - random sampling with actual content
-                sample_size = min(RANDOM_SAMPLE_SIZE, len(self.chat_buffer))
-                selected_messages = random.sample(self.chat_buffer, sample_size)
-                
-                message_parts = []
-                for msg in selected_messages:
-                    if ":" in msg:
-                        user_name = msg.split(':', 1)[0].strip()
-                        content = msg.split(':', 1)[1].strip()
-                        message_parts.append(f"{user_name} says {content}")
-                    else:
-                        message_parts.append(f"Viewer says {msg}")
-                
-                if len(message_parts) == 1:
-                    summary = message_parts[0]
-                elif len(message_parts) == 2:
-                    summary = f"{message_parts[0]}, and {message_parts[1]}"
-                else:
-                    summary = ", ".join(message_parts[:-1]) + f", and {message_parts[-1]}"
+                summary = f"{selected_message}"
             
             self.summary_queue.put(summary)
             logger.info(f"Random selection: {summary}")
