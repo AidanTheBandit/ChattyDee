@@ -1,10 +1,10 @@
-"""Main application using source switching"""
+"""Restored main application"""
 
 import asyncio
 import logging
 import signal
 import sys
-from barkle_connector import EnhancedBarkleConnector
+from barkle_connector import EnhancedBarkleConnector  # Back to original class name
 from tts_handler import SimplifiedTTSHandler
 from obs_controller import SourceSwitchingOBSController
 from config import SUMMARY_DELAY
@@ -15,9 +15,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class SourceSwitchingChattyDee:
+class StreamingChattyDee:
     def __init__(self):
-        self.barkle = EnhancedBarkleConnector()
+        self.barkle = EnhancedBarkleConnector()  # Back to original class
         self.obs = SourceSwitchingOBSController()
         self.tts = SimplifiedTTSHandler()
         self.running = False
@@ -27,17 +27,23 @@ class SourceSwitchingChattyDee:
         self.tts.set_obs_controller(self.obs)
         
     async def start(self):
-        """Start the application"""
-        logger.info("🚀 Starting Source-Switching Chatty Dee...")
+        """Start the streaming application"""
+        logger.info("🚀 Starting Streaming Chatty Dee...")
         
         # Connect to OBS
         if not self.obs.connect():
             logger.error("❌ Failed to connect to OBS")
             return False
         
+        # Check Groq availability
+        if self.barkle.groq_summarizer.is_available():
+            logger.info("✅ Groq summarization enabled")
+        else:
+            logger.warning("⚠️ Groq not available - using random selection only")
+        
         self.running = True
         
-        # Start Barkle connection
+        # Start Barkle connection - BACK TO ORIGINAL METHOD
         barkle_task = asyncio.create_task(self.barkle.connect_to_chat())
         
         try:
@@ -50,7 +56,7 @@ class SourceSwitchingChattyDee:
     
     async def main_loop(self):
         """Main processing loop"""
-        logger.info("🎤 Chatty Dee is running with source switching...")
+        logger.info("🎤 Streaming Chatty Dee is running...")
         
         while self.running:
             try:
@@ -66,7 +72,7 @@ class SourceSwitchingChattyDee:
                 await asyncio.sleep(1)
     
     async def process_summary(self, summary):
-        """Process summary with source switching animation"""
+        """Process summary with animation"""
         if self.processing:
             return
             
@@ -84,6 +90,8 @@ class SourceSwitchingChattyDee:
                     None, self.tts.play_speech, audio_file
                 )
                 logger.info("✅ Speech and animation completed")
+            else:
+                logger.warning("❌ Failed to generate speech")
             
             # Wait before next
             await asyncio.sleep(SUMMARY_DELAY)
@@ -108,7 +116,7 @@ async def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    chatty = SourceSwitchingChattyDee()
+    chatty = StreamingChattyDee()
     await chatty.start()
 
 if __name__ == "__main__":

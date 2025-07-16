@@ -42,7 +42,7 @@ class SourceSwitchingOBSController:
             
             required_sources = [
                 CHATTY_SOURCE, 
-                "Chatty-stretch",  # New stretched source
+                "Chatty-stretch",  # Stretched source
                 LIPS_CLOSED_SOURCE, 
                 LIPS_OPEN_SOURCE
             ]

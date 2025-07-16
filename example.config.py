@@ -1,35 +1,41 @@
-"""Enhanced configuration for Chatty Dee Barkle with Groq"""
+"""Enhanced configuration with dynamic stream ID support"""
 
 # Barkle API Configuration
-BARKLE_TOKEN = "TOKEN_PLACEHOLDER"  # Replace with your actual token
-BARKLE_WS_URL = "wss://barkle.chat/ws/chat"
+BARKLE_TOKEN = "your_barkle_token_here"
+BARKLE_TARGET_USER_ID = "barkle:username_to_monitor"  
 
-# Groq API Configuration
-GROQ_API_KEY = "GROQ_HERE"  # Get from https://console.groq.com
-GROQ_MODEL = "llama-3.3-70b-versatile"  # Fast model for summarization
+# Stream Configuration Options
+BARKLE_STREAM_ID = None 
+BARKLE_AUTO_DETECT_STREAM = True
+
+# Groq API Configuration  
+GROQ_API_KEY = "your_groq_api_key_here"
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
 # Chat Speed Detection
-FAST_CHAT_THRESHOLD = 10  # Messages per minute to trigger Groq summarization
-CHAT_SPEED_WINDOW = 60    # Time window in seconds to measure chat speed
-MIN_MESSAGES_FOR_GROQ = 8 # Minimum messages needed before using Groq
-RANDOM_SAMPLE_SIZE = 3    # Number of random messages to select for slow chat
+FAST_CHAT_THRESHOLD = 5    
+CHAT_SPEED_WINDOW = 60
+MIN_MESSAGES_FOR_GROQ = 4  
+RANDOM_SAMPLE_SIZE = 3
 
-# OBS Configuration (Updated for your setup)
+# OBS Configuration
 OBS_HOST = "localhost"
 OBS_PORT = 4455
-OBS_PASSWORD = "PASSWORD_PLACEHOLDER"  # Replace with your actual OBS password
+OBS_PASSWORD = ""
 
 # Scene and Source Names
 MAIN_SCENE = "chatty"
-CHATTY_SOURCE = "Chatty"              # Normal character
-CHATTY_STRETCH_SOURCE = "Chatty-stretch"  # Stretched character
-LIPS_CLOSED_SOURCE = "lips"           # Closed lips
-LIPS_OPEN_SOURCE = "lips-open"        # Open lips
+CHATTY_SOURCE = "Chatty"
+LIPS_CLOSED_SOURCE = "lips"
+LIPS_OPEN_SOURCE = "lips-open"
 
 # Animation Settings
-ANIMATION_SPEED = 0.5  # 200ms switching interval
+ANIMATION_SPEED = 0.2
 
 # TTS Settings
 TTS_LANGUAGE = "en"
 TTS_SLOW = False
 SUMMARY_DELAY = 2
+
+# Stream Monitoring
+STREAM_CHECK_INTERVAL = 30 

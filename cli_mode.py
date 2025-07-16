@@ -145,13 +145,15 @@ class CLIChattyDeeWithTTS:
         for i, msg in enumerate(self.chat_buffer, 1):
             print(f"  {i}. {msg}")
         
-        # Process with TTS
+        # Process with TTS - Updated thresholds
         if chat_speed >= FAST_CHAT_THRESHOLD and len(self.chat_buffer) >= MIN_MESSAGES_FOR_GROQ:
             print(f"\n🚀 Using Groq (fast chat)")
             self.process_with_groq_and_tts()
-        else:
+        elif len(self.chat_buffer) >= 2:  # Lowered threshold
             print(f"\n🎲 Using random selection")
             self.process_with_random_and_tts()
+        else:
+            print(f"\n⚠️ Not enough messages (need at least 2)")
     
     def process_with_groq_and_tts(self):
         """Process with Groq and speak result"""
@@ -263,6 +265,7 @@ class CLIChattyDeeWithTTS:
         print(f"  OBS connected: {'✅' if self.obs.is_connected() else '❌'}")
         print(f"  Animation ready: {'✅' if self.obs.is_connected() else '❌'}")
         print(f"  Fast chat threshold: {FAST_CHAT_THRESHOLD} msg/min")
+        print(f"  Min messages for Groq: {MIN_MESSAGES_FOR_GROQ}")
     
     def clear_buffer(self):
         """Clear buffer"""
@@ -326,9 +329,9 @@ class CLIChattyDeeWithTTS:
                     subcommand = parts[1].lower()
                     
                     if subcommand == "fast":
-                        self.simulate_chat_messages(15, fast_mode=True)
+                        self.simulate_chat_messages(10, fast_mode=True)  # More messages for fast mode
                     elif subcommand == "slow":
-                        self.simulate_chat_messages(5, fast_mode=False)
+                        self.simulate_chat_messages(3, fast_mode=False)  # Fewer messages for slow mode
                     else:
                         try:
                             count = int(subcommand)
@@ -357,3 +360,7 @@ class CLIChattyDeeWithTTS:
                 break
             except Exception as e:
                 print(f"❌ Error: {e}")
+
+if __name__ == "__main__":
+    cli = CLIChattyDeeWithTTS()
+    asyncio.run(cli.run())
