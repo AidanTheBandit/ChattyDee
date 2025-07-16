@@ -1,4 +1,4 @@
-"""Enhanced Barkle connector with configurable and dynamic stream ID detection"""
+"""Enhanced Barkle connector with configurable cooldown system"""
 
 import asyncio
 import websockets
@@ -13,7 +13,8 @@ from stream_id_helper import BarkleStreamHelper
 from config import (
     BARKLE_TOKEN, BARKLE_TARGET_USER_ID, BARKLE_STREAM_ID, 
     BARKLE_AUTO_DETECT_STREAM, FAST_CHAT_THRESHOLD, CHAT_SPEED_WINDOW, 
-    MIN_MESSAGES_FOR_GROQ, RANDOM_SAMPLE_SIZE, STREAM_CHECK_INTERVAL
+    MIN_MESSAGES_FOR_GROQ, RANDOM_SAMPLE_SIZE, STREAM_CHECK_INTERVAL,
+    COOLDOWN, TIMEOUT  # New cooldown imports
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -31,9 +32,10 @@ class EnhancedBarkleConnector:
         self.groq_summarizer = GroqSummarizer()
         self.connection_id = f"chatty-{int(time.time())}-{random.randint(1000, 9999)}"
         self._last_process_time = time.time()
+        self._last_response_time = 0  # Track when we last responded
         
         # Stream ID configuration
-        self.current_stream_id = BARKLE_STREAM_ID  # Use config value
+        self.current_stream_id = BARKLE_STREAM_ID
         self.stream_helper = BarkleStreamHelper(self.token) if BARKLE_AUTO_DETECT_STREAM else None
         
     async def connect_to_chat(self):
@@ -203,14 +205,23 @@ class EnhancedBarkleConnector:
         logger.info(f"Message {message_id} deleted")
     
     async def check_and_process_messages(self):
-        """Enhanced processing logic"""
+        """Enhanced processing logic with cooldown"""
         buffer_length = len(self.chat_buffer)
         
         if buffer_length < 1:
             return
-            
+        
+        current_time = time.time()
+        time_since_last_response = current_time - self._last_response_time
         chat_speed = self.calculate_chat_speed()
-        logger.info(f"Chat speed: {chat_speed:.1f} messages/minute, Buffer: {buffer_length}")
+        
+        logger.info(f"Chat speed: {chat_speed:.1f} msg/min, Buffer: {buffer_length}")
+        
+        # Check cooldown - prevent too frequent responses
+        if time_since_last_response < COOLDOWN:
+            remaining_cooldown = COOLDOWN - time_since_last_response
+            logger.info(f"⏳ Cooldown active: {remaining_cooldown:.1f}s remaining")
+            return
         
         # Processing logic with configurable thresholds
         if chat_speed >= FAST_CHAT_THRESHOLD and buffer_length >= MIN_MESSAGES_FOR_GROQ:
@@ -220,14 +231,20 @@ class EnhancedBarkleConnector:
             logger.info(f"🎲 Using random selection ({buffer_length} messages)")
             self.process_with_random_selection()
         
-        # Fallback timeout processing
+        # Fallback timeout processing (after cooldown expires)
         elif buffer_length >= 1 and self._should_process_timeout():
             logger.info(f"⏰ Timeout processing ({buffer_length} messages)")
             self.process_with_random_selection()
     
     def _should_process_timeout(self):
         """Check if we should process due to timeout"""
-        return (time.time() - self._last_process_time) > 15
+        current_time = time.time()
+        time_since_last_response = current_time - self._last_response_time
+        time_since_last_process = current_time - self._last_process_time
+        
+        # Only timeout if cooldown has expired and we haven't processed in a while
+        return (time_since_last_response >= COOLDOWN and 
+                time_since_last_process >= TIMEOUT)
     
     async def process_with_groq(self):
         """Process with Groq summarization"""
@@ -243,6 +260,9 @@ class EnhancedBarkleConnector:
                 processed_text = f"Chat buzz: {summary}"
                 self.summary_queue.put(processed_text)
                 logger.info(f"Groq summary: {processed_text}")
+                
+                # Update response time
+                self._last_response_time = time.time()
             else:
                 self.process_with_random_selection()
             
@@ -254,7 +274,7 @@ class EnhancedBarkleConnector:
             self.process_with_random_selection()
     
     def process_with_random_selection(self):
-        """Process with actual message content"""
+        """Process with actual message content and cooldown tracking"""
         try:
             if not self.chat_buffer:
                 return
@@ -303,6 +323,10 @@ class EnhancedBarkleConnector:
             
             self.summary_queue.put(summary)
             logger.info(f"Random selection: {summary}")
+            
+            # Update response time
+            self._last_response_time = time.time()
+            
             self.chat_buffer.clear()
             self._last_process_time = time.time()
             
@@ -311,6 +335,7 @@ class EnhancedBarkleConnector:
             if self.chat_buffer:
                 simple_summary = f"Chat activity from {len(self.chat_buffer)} viewers"
                 self.summary_queue.put(simple_summary)
+                self._last_response_time = time.time()
                 self.chat_buffer.clear()
                 self._last_process_time = time.time()
     
@@ -338,5 +363,19 @@ class EnhancedBarkleConnector:
             "stream_id": self.current_stream_id,
             "connected": self.connected,
             "target_user": self.target_user_id,
-            "auto_detect": BARKLE_AUTO_DETECT_STREAM
+            "auto_detect": BARKLE_AUTO_DETECT_STREAM,
+            "cooldown": COOLDOWN,
+            "timeout": TIMEOUT
+        }
+    
+    def get_cooldown_status(self):
+        """Get current cooldown status"""
+        current_time = time.time()
+        time_since_last_response = current_time - self._last_response_time
+        remaining_cooldown = max(0, COOLDOWN - time_since_last_response)
+        
+        return {
+            "cooldown_active": remaining_cooldown > 0,
+            "remaining_seconds": remaining_cooldown,
+            "last_response_time": self._last_response_time
         }
