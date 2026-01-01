@@ -128,11 +128,11 @@ class YouTubeConnector:
         if chat_speed >= FAST_CHAT_THRESHOLD and buffer_length >= MIN_MESSAGES_FOR_GROQ:
             logger.info(f"🚀 Using Groq (fast chat: {chat_speed:.1f} msg/min)")
             await self.process_with_groq()
+        elif self._should_process_timeout():
+            logger.info(f"⏰ Timeout processing ({buffer_length} messages)")
+            self.process_with_random_selection()
         elif buffer_length >= 1:
             logger.info(f"🎲 Using random selection ({buffer_length} messages)")
-            self.process_with_random_selection()
-        elif buffer_length >= 1 and self._should_process_timeout():
-            logger.info(f"⏰ Timeout processing ({buffer_length} messages)")
             self.process_with_random_selection()
             
     def _should_process_timeout(self):
