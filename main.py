@@ -1,13 +1,13 @@
-"""Restored main application"""
+"""Multi-platform main application"""
 
 import asyncio
 import logging
 import signal
 import sys
-from barkle_connector import EnhancedBarkleConnector  # Back to original class name
+from platform_manager import PlatformManager
 from tts_handler import SimplifiedTTSHandler
 from obs_controller import SourceSwitchingOBSController
-from config import SUMMARY_DELAY
+from config import SUMMARY_DELAY, ENABLED_PLATFORMS
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class StreamingChattyDee:
     def __init__(self):
-        self.barkle = EnhancedBarkleConnector()  # Back to original class
+        self.platform_manager = PlatformManager()
         self.obs = SourceSwitchingOBSController()
         self.tts = SimplifiedTTSHandler()
         self.running = False
@@ -28,7 +28,8 @@ class StreamingChattyDee:
         
     async def start(self):
         """Start the streaming application"""
-        logger.info("🚀 Starting Streaming Chatty Dee...")
+        logger.info("🚀 Starting Multi-Platform Chatty Dee...")
+        logger.info(f"📡 Enabled platforms: {', '.join(ENABLED_PLATFORMS)}")
         
         # Connect to OBS
         if not self.obs.connect():
@@ -36,15 +37,15 @@ class StreamingChattyDee:
             return False
         
         # Check Groq availability
-        if self.barkle.groq_summarizer.is_available():
+        if self.platform_manager.get_groq_status():
             logger.info("✅ Groq summarization enabled")
         else:
             logger.warning("⚠️ Groq not available - using random selection only")
         
         self.running = True
         
-        # Start Barkle connection - BACK TO ORIGINAL METHOD
-        barkle_task = asyncio.create_task(self.barkle.connect_to_chat())
+        # Start all platform connections
+        platform_task = asyncio.create_task(self.platform_manager.start_all_platforms())
         
         try:
             await self.main_loop()
@@ -52,16 +53,31 @@ class StreamingChattyDee:
             logger.info("Interrupted by user")
         finally:
             await self.cleanup()
-            barkle_task.cancel()
+            platform_task.cancel()
     
     async def main_loop(self):
         """Main processing loop"""
-        logger.info("🎤 Streaming Chatty Dee is running...")
+        logger.info("🎤 Multi-Platform Chatty Dee is running...")
+        
+        # Wait for at least one platform to connect
+        max_wait = 30
+        wait_time = 0
+        while self.running and not self.platform_manager.is_any_connected() and wait_time < max_wait:
+            logger.info("⏳ Waiting for platform connections...")
+            await asyncio.sleep(2)
+            wait_time += 2
+            
+        if not self.platform_manager.is_any_connected():
+            logger.error("❌ No platforms connected after waiting")
+            return
+            
+        connection_status = self.platform_manager.get_connection_status()
+        logger.info(f"✅ Platform status: {connection_status}")
         
         while self.running:
             try:
                 if not self.processing:
-                    summary = self.barkle.get_summary()
+                    summary = self.platform_manager.get_summary()
                     if summary:
                         await self.process_summary(summary)
                 
@@ -106,6 +122,7 @@ class StreamingChattyDee:
         logger.info("🧹 Cleaning up...")
         self.running = False
         self.tts.stop_speech()
+        await self.platform_manager.stop_all_platforms()
         self.obs.disconnect()
 
 def signal_handler(signum, frame):

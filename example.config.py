@@ -31,6 +31,10 @@ CHAT_SPEED_WINDOW = 60
 MIN_MESSAGES_FOR_GROQ = 4  
 RANDOM_SAMPLE_SIZE = 3
 
+# Response Timing
+COOLDOWN = 20  # Seconds between responses
+TIMEOUT = 30   # Timeout for processing messages
+
 # OBS Configuration
 OBS_HOST = "localhost"
 OBS_PORT = 4455
