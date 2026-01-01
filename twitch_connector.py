@@ -12,6 +12,7 @@ try:
     TWITCHIO_AVAILABLE = True
 except ImportError:
     TWITCHIO_AVAILABLE = False
+    commands = None
     
 from groq_summarizer import GroqSummarizer
 from config import (
@@ -214,29 +215,35 @@ class TwitchConnector:
             logger.info("Disconnected from Twitch chat")
 
 
-class TwitchBot(commands.Bot):
-    """Twitch bot for handling chat messages"""
-    
-    def __init__(self, token, prefix, initial_channels, connector):
-        super().__init__(token=token, prefix=prefix, initial_channels=initial_channels)
-        self.connector = connector
+if TWITCHIO_AVAILABLE and commands:
+    class TwitchBot(commands.Bot):
+        """Twitch bot for handling chat messages"""
         
-    async def event_ready(self):
-        """Called when bot is ready"""
-        logger.info(f"✅ Successfully connected to Twitch as {self.nick}")
-        self.connector.connected = True
-        
-    async def event_message(self, message):
-        """Called when a message is received"""
-        # Ignore messages from the bot itself
-        if message.echo:
-            return
+        def __init__(self, token, prefix, initial_channels, connector):
+            super().__init__(token=token, prefix=prefix, initial_channels=initial_channels)
+            self.connector = connector
             
-        # Handle the message
-        await self.connector.handle_chat_message(
-            message.author.name,
-            message.content
-        )
-        
-        # Allow commands to be processed
-        await self.handle_commands(message)
+        async def event_ready(self):
+            """Called when bot is ready"""
+            logger.info(f"✅ Successfully connected to Twitch as {self.nick}")
+            self.connector.connected = True
+            
+        async def event_message(self, message):
+            """Called when a message is received"""
+            # Ignore messages from the bot itself
+            if message.echo:
+                return
+                
+            # Handle the message
+            await self.connector.handle_chat_message(
+                message.author.name,
+                message.content
+            )
+            
+            # Allow commands to be processed
+            await self.handle_commands(message)
+else:
+    # Dummy class when twitchio is not available
+    class TwitchBot:
+        def __init__(self, *args, **kwargs):
+            pass
